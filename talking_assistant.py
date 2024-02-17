@@ -8,8 +8,7 @@ import os
 from audio_recorder_streamlit import audio_recorder
 from openai import OpenAI
 
-API_KEY = ''
-
+API_KEY = os.getenv("OPENAI_API_KEY")
 
 def transcribe_text_to_voice(audio_location):
     client = OpenAI(api_key=API_KEY)

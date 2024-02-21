@@ -10,12 +10,36 @@ import openai
 import os
 from audio_recorder_streamlit import audio_recorder
 from openai import OpenAI
+from langchain.chat_models import ChatOpenAI
+from langchain.callbacks.base import BaseCallbackHandler
 import pygame
 
 st.set_page_config(
     page_title="MixedGPT",
     page_icon="📃",
 )
+
+class ChatCallbackHandler(BaseCallbackHandler):
+    message = ""
+
+    def on_llm_start(self, *args, **kwargs):
+        self.message_box = st.empty()
+
+    def on_llm_end(self, *args, **kwargs):
+        save_message(self.message, "ai")
+
+    def on_llm_new_token(self, token, *args, **kwargs):
+        self.message += token
+        self.message_box.markdown(self.message)
+
+llm = ChatOpenAI(
+    temperature=0.1,
+    streaming=True,
+    callbacks=[
+        ChatCallbackHandler(),
+    ],
+)
+
 API_KEY = os.getenv("OPENAI_API_KEY")
 
 def embed_file(file):
@@ -36,6 +60,9 @@ def embed_file(file):
     vectorstore = FAISS.from_documents(docs, cached_embeddings)
     retriever = vectorstore.as_retriever()
     return retriever
+
+def save_message(message, role):
+    st.session_state["messages"].append({"message": message, "role": role})
 
 def transcribe_text_to_voice(audio_location):
     client = OpenAI(api_key=API_KEY)
@@ -58,7 +85,7 @@ def send_message(message, role, save=True):
     with st.chat_message(role):
         st.markdown(message)
     if save:
-        st.session_state["messages"].append({"message": message, "role": role})
+        save_message(message, role)
 
 def paint_history():
     for message in st.session_state["messages"]:

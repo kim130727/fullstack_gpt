@@ -9,11 +9,17 @@ from langchain.vectorstores.faiss import FAISS
 from langchain.chat_models import ChatOpenAI
 from langchain.callbacks.base import BaseCallbackHandler
 import time
+from audio_recorder_streamlit import audio_recorder
+from openai import OpenAI
+import os
+import pygame
 
 st.set_page_config(
     page_title="DocumentGPT",
     page_icon="📃",
 )
+
+API_KEY = os.getenv("OPENAI_API_KEY")
 
 class ChatCallbackHandler(BaseCallbackHandler):
     message = ""
@@ -36,8 +42,9 @@ llm = ChatOpenAI(
     ],
 )
 
-@st.cache_resource(show_spinner="Embedding file...") #st.cache_data가 안되서 바꿔보았음
+#@st.cache_resource(show_spinner="Embedding file...") #st.cache_data가 안되서 바꿔보았음
 def embed_file(file):
+    print({file.name})
     file_content = file.read()
     file_path = f"./.cache/files/{file.name}"
     with open(file_path, "wb") as f:
@@ -55,6 +62,12 @@ def embed_file(file):
     vectorstore = FAISS.from_documents(docs, cached_embeddings)
     retriever = vectorstore.as_retriever()
     return retriever
+
+def transcribe_text_to_voice(audio_location):
+    client = OpenAI(api_key=API_KEY)
+    audio_file= open(audio_location, "rb")
+    transcript = client.audio.transcriptions.create(language='en', model="whisper-1", file=audio_file)
+    return transcript.text
 
 def save_message(message, role):
     st.session_state["messages"].append({"message": message, "role": role})
@@ -77,14 +90,17 @@ def paint_history():
 def format_docs(docs):
     return "\n\n".join(document.page_content for document in docs)
 
+def text_to_speech_ai(speech_file_path, api_response):
+    client = OpenAI(api_key=API_KEY)
+    response = client.audio.speech.create(model="tts-1",voice="alloy",input=api_response)
+    response.stream_to_file(speech_file_path)
+
 prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
             """
-            Let's do the vocabulary test in the following context. You must provide the word in this context. And I'll explain about that by answer.
-            If I can not exlain about the word. Please explain this word in the A2 level please.
-            You teach me english. Please provide A2 level english dialogue please.
+            주어진 context를 통해 AI와 Discussion를 진행합니다. Discussion은 A2 레벨로 진행합니다. 단어에 대한 설명을 해주고 문법을 교정해주기도 합니다. 답변하는 문장은 2개 이하입니다.
             
             Context: {context}
             """,
@@ -93,29 +109,35 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-st.title("DocumentGPT")
+st.title("🧑‍💻 JS에듀 온라인 선생 💬 치현스쿨")
 
 st.markdown(
     """
-Welcome!
-            
-Use this chatbot to ask questions to an AI about your files!
-
-Upload your files on the sidebar.
+주어진 context를 가지고 🤖AI와 대화해 봅시다.
 """
 )
+st.write("AI와 Vocabulary test 위주로 하자고 지시한 상태입니다.")
+
 
 with st.sidebar:
     file = st.file_uploader(
         "Upload a .txt .pdf or .docx file",
         type=["pdf", "txt", "docx"],
     )
+    #audio_bytes = audio_recorder(icon_name="microphone")
+    st.write("Our city’s Department of Waste Management ① provides a special service to residents who are disabled or physically unable to place their waste at ② designated collection points. To help them, we visit their homes and collect their waste. Mr. James Smith, one of your patients, ③ has requested this special service. In order to provide Mr. Smith with this service, we need to verify ④ what his mobility is medically impaired. Therefore, with his consent, we would like to request that you provide medical documentation of Mr. Smith’s physical impairment. Please find the attached form to fill out with his medical information. Your cooperation in this matter is greatly ⑤ appreciated.")
 
 if file:
     retriever = embed_file(file)
     send_message("I'm ready! Ask away!", "ai", save=False)
     paint_history()
     message = st.chat_input("Ask anything about your file...")
+    #audio_location = "audio_file.wav"
+    #with open(audio_location, "wb") as f:
+    #    f.write(audio_bytes)
+        
+    #st.audio(audio_location)
+    #message = transcribe_text_to_voice(audio_location)
     if message:
         send_message(message, "human")
         chain = (
@@ -128,5 +150,18 @@ if file:
         )
         with st.chat_message("ai"):
             response = chain.invoke(message)
+            speech_file_path = 'audio_response.mp3'
+            text_to_speech_ai(speech_file_path, response.content)
+            pygame.mixer.init()
+            pygame.mixer.music.load(speech_file_path)
+            pygame.mixer.music.play()
+            clock = pygame.time.Clock()
+            while pygame.mixer.music.get_busy():
+                clock.tick(30)
+            pygame.mixer.quit()
+            try:
+                os.remove(speech_file_path)
+            except PermissionError:
+                st.write("We can't delete the files.")
 else:
     st.session_state["messages"] = []

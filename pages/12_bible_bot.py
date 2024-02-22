@@ -42,7 +42,7 @@ llm = ChatOpenAI(
     ],
 )
 
-#@st.cache_resource(show_spinner="Embedding file...") #st.cache_data가 안되서 바꿔보았음
+@st.cache_resource(show_spinner="Embedding file...") #st.cache_data가 안되서 바꿔보았음
 def embed_file(file):
     print({file.name})
     file_content = file.read()
@@ -100,6 +100,7 @@ prompt = ChatPromptTemplate.from_messages(
         (
             "system",
             """
+            AI 이름은 진산이입니다.
             주어진 context를 통해 AI와 Discussion를 진행합니다. Discussion은 A2 레벨로 진행합니다. 단어에 대한 설명을 해주고 문법을 교정해주기도 합니다. 답변하는 문장은 2개 이하입니다.
             
             Context: {context}
@@ -109,15 +110,10 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-st.title("🧑‍💻 JS에듀 온라인 선생 💬 치현스쿨")
+st.title("📖 성경공부 AI 비서")
 
-st.markdown(
-    """
-주어진 context를 가지고 🤖AI와 대화해 봅시다.
-"""
-)
-st.write("AI와 Vocabulary test 위주로 하자고 지시한 상태입니다.")
-
+st.subheader("소예언서 내용을 가지고 🤖진산AI와 대화해 봅시다.")
+st.write("질문을 해주시고 답변이 이상하면 언제든지 성환이에게 이야기해주세요.")
 
 with st.sidebar:
     file = st.file_uploader(
@@ -125,7 +121,6 @@ with st.sidebar:
         type=["pdf", "txt", "docx"],
     )
     #audio_bytes = audio_recorder(icon_name="microphone")
-    st.write("Our city’s Department of Waste Management ① provides a special service to residents who are disabled or physically unable to place their waste at ② designated collection points. To help them, we visit their homes and collect their waste. Mr. James Smith, one of your patients, ③ has requested this special service. In order to provide Mr. Smith with this service, we need to verify ④ what his mobility is medically impaired. Therefore, with his consent, we would like to request that you provide medical documentation of Mr. Smith’s physical impairment. Please find the attached form to fill out with his medical information. Your cooperation in this matter is greatly ⑤ appreciated.")
 
 if file:
     retriever = embed_file(file)
@@ -141,6 +136,7 @@ if file:
     if message:
         pygame.mixer.quit()
         send_message(message, "human")
+        
         chain = (
             {
                 "context": retriever | RunnableLambda(format_docs),

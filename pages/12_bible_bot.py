@@ -134,6 +134,8 @@ if file:
     #st.audio(audio_location)
     #message = transcribe_text_to_voice(audio_location)
     if message:
+        pygame.mixer.init()
+        pygame.mixer.music.stop()
         pygame.mixer.quit()
         send_message(message, "human")
         

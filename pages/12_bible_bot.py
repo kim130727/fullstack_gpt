@@ -78,7 +78,6 @@ def send_message(message, role, save=True):
     if save:
         save_message(message, role)
 
-
 def paint_history():
     for message in st.session_state["messages"]:
         send_message(
@@ -135,10 +134,7 @@ if file:
     #message = transcribe_text_to_voice(audio_location)
     if message:
         pygame.mixer.init()
-        pygame.mixer.music.stop()
-        pygame.mixer.quit()
         send_message(message, "human")
-        
         chain = (
             {
                 "context": retriever | RunnableLambda(format_docs),
@@ -147,11 +143,11 @@ if file:
             | prompt
             | llm
         )
+        
         with st.chat_message("ai"):
-            response = chain.invoke(message)
             try:
                 speech_file_path = 'audio_response.mp3'
-                text_to_speech_ai(speech_file_path, response.content)
+                text_to_speech_ai(speech_file_path, chain.invoke(message).content)
                 pygame.mixer.init()
                 pygame.mixer.music.load(speech_file_path)
                 pygame.mixer.music.play()

@@ -43,19 +43,15 @@ llm = ChatOpenAI(
 )
 
 @st.cache_resource(show_spinner="Embedding file...") #st.cache_data가 안되서 바꿔보았음
-def embed_file(file):
-    print({file.name})
-    file_content = file.read()
-    file_path = f"./.cache/files/{file.name}"
-    with open(file_path, "wb") as f:
-        f.write(file_content)
-    cache_dir = LocalFileStore(f"./.cache/embeddings/{file.name}")
+def embed_file():
+    file_path = f"./.cache/files/소예언서.docx"
+    cache_dir = LocalFileStore(f"./.cache/embeddings/소예언서.docx")
     splitter = CharacterTextSplitter.from_tiktoken_encoder(
         separator="\n",
         chunk_size=600,
         chunk_overlap=100,
     )
-    loader = UnstructuredFileLoader(f"./files/{file.name}")
+    loader = UnstructuredFileLoader(f"./files/소예언서.docx")
     docs = loader.load_and_split(text_splitter=splitter)
     embeddings = OpenAIEmbeddings()
     cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
@@ -114,15 +110,8 @@ st.title("📖 성경공부 AI 비서")
 st.subheader("소예언서 내용을 가지고 🤖진산AI와 대화해 봅시다.")
 st.write("질문을 해주시고 답변이 이상하면 언제든지 성환이에게 이야기해주세요.")
 
-with st.sidebar:
-    file = st.file_uploader(
-        "Upload a .txt .pdf or .docx file",
-        type=["pdf", "txt", "docx"],
-    )
-    #audio_bytes = audio_recorder(icon_name="microphone")
-
-if file:
-    retriever = embed_file(file)
+def main():
+    retriever = embed_file()
     send_message("I'm ready! Ask away!", "ai", save=False)
     paint_history()
     message = st.chat_input("Ask anything about your file...")
@@ -162,5 +151,8 @@ if file:
                 os.remove('audio_response.mp3')
             except PermissionError:
                 st.write("We can't delete the files.")
-else:
-    st.session_state["messages"] = []
+    else:
+        st.session_state["messages"] = []
+
+if __name__=="__main__":
+    main()

@@ -15,7 +15,7 @@ import os
 import pygame
 
 st.set_page_config(
-    page_title="DocumentGPT",
+    page_title="BibleGPT",
     page_icon="📃",
 )
 
@@ -75,6 +75,7 @@ def send_message(message, role, save=True):
         save_message(message, role)
 
 def paint_history():
+    
     for message in st.session_state["messages"]:
         send_message(
             message["message"],
@@ -106,7 +107,6 @@ prompt = ChatPromptTemplate.from_messages(
 )
 
 st.title("📖 성경공부 AI 비서")
-
 st.subheader("소예언서 내용을 가지고 🤖진산AI와 대화해 봅시다.")
 st.write("질문을 해주시고 답변이 이상하면 언제든지 성환이에게 이야기해주세요.")
 
@@ -134,7 +134,6 @@ def main():
         )
         
         with st.chat_message("ai"):
-
             try:
                 speech_file_path = 'audio_response.mp3'
                 text_to_speech_ai(speech_file_path, chain.invoke(message).content)

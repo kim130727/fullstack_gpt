@@ -23,7 +23,6 @@ API_KEY = os.getenv("OPENAI_API_KEY")
 
 class ChatCallbackHandler(BaseCallbackHandler):
     message = ""
-
     def on_llm_start(self, *args, **kwargs):
         self.message_box = st.empty()
 

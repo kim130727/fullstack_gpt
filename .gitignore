@@ -3,3 +3,7 @@ env/
 files/
 .cache/
 .streamlit/
+.DS_Store
+falcon.bin
+all-MiniLM-L6-v2-f16.gguf
+mistral-7b-openorca.gguf2.Q4_0.gguf

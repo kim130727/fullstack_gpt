@@ -1,3 +1,4 @@
+from langchain.storage import LocalFileStore
 import streamlit as st
 import subprocess
 import math
@@ -11,6 +12,8 @@ from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
 from openai import OpenAI
+from langchain.vectorstores.faiss import FAISS
+from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
 
 client = OpenAI()
 llm = ChatOpenAI(
@@ -19,6 +22,27 @@ llm = ChatOpenAI(
 
 
 has_transcript = os.path.exists("./.cache/podcast.txt")
+
+splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+    chunk_size=800,
+    chunk_overlap=100,
+)
+
+
+@st.cache_resource()
+def embed_file(file_path):
+    cache_dir = LocalFileStore(f"./.cache/embeddings/{file.name}")
+    splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+        chunk_size=800,
+        chunk_overlap=100,
+    )
+    loader = TextLoader(file_path)
+    docs = loader.load_and_split(text_splitter=splitter)
+    embeddings = OpenAIEmbeddings()
+    cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
+    vectorstore = FAISS.from_documents(docs, cached_embeddings)
+    retriever = vectorstore.as_retriever()
+    return retriever
 
 @st.cache_resource()
 def transcribe_chunks(chunk_folder, destination):
@@ -119,13 +143,9 @@ if video:
 
     with summary_tab:
         start = st.button("Generate summary")
-
         if start:
             loader = TextLoader(transcript_path)
-            splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-                chunk_size=800,
-                chunk_overlap=100,
-            )
+
             docs = loader.load_and_split(text_splitter=splitter)
 
             first_summary_prompt = ChatPromptTemplate.from_template(
@@ -168,3 +188,8 @@ if video:
                     )
                     st.write(summary)
             st.write(summary)
+
+    with qa_tab:
+        retriever = embed_file(transcript_path)
+        docs = retriever.invoke("do they talk about marcus aurelius?")
+        st.write(docs)

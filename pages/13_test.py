@@ -1,26 +1,27 @@
-import time
-import streamlit as st
+from pydub import AudioSegment  
+from pydub.playback import play
 
-st.set_page_config(
-    page_title="DocumentGPT",
-    page_icon="star"
-)
 
-st.title("testGPT")
+def mp3ToWav(src_file, dest_file):  
+    sound = AudioSegment.from_mp3(src_file)
 
-st.markdown("""
-Welcome!
+    #play(sound)  
+    sound.export(dest_file, format="wav")  
+    pass  
 
-Use this chatbot to ask questions to an AI about your files!            
-"""
-)
+def wavToMp3(src_file, dest_file):  
+    sound = AudioSegment.from_wav(src_file)  
+    sound.export(dest_file, format="mp3")
 
-file = st.file_uploader("Upload a .txt .pdf or .docx file", type=["pdf", "txt", "docx"],)
+    #play(sound)  
+    pass  
 
-if file:
-    st.write(file)
-    file_content = file.read()
-    file_path = f"./.cache/files/{file.name}"
-    st.write(file_content, file_path)
-    with open(file_path,"wb") as f:
-        f.write(file_content)
+if __name__ == '__main__':  
+    wavToMp3(src_file="C:\download\yang\\240424_yang 0002.wav",dest_file="C:\download\yang\\240424_yang 0002.mp3")
+    wavToMp3(src_file="C:\download\yang\\240424_yang 0003.wav",dest_file="C:\download\yang\\240424_yang 0003.mp3")  
+    wavToMp3(src_file="C:\download\yang\\240424_yang 0004.wav",dest_file="C:\download\yang\\240424_yang 0004.mp3")  
+    wavToMp3(src_file="C:\download\yang\\240424_yang 0005.wav",dest_file="C:\download\yang\\240424_yang 0005.mp3")  
+    wavToMp3(src_file="C:\download\yang\\240424_yang 0006.wav",dest_file="C:\download\yang\\240424_yang 0006.mp3")  
+    wavToMp3(src_file="C:\download\yang\\240424_yang 0007.wav",dest_file="C:\download\yang\\240424_yang 0007.mp3")  
+    wavToMp3(src_file="C:\download\yang\\240424_yang 0008.wav",dest_file="C:\download\yang\\240424_yang 0008.mp3")  
+    pass
